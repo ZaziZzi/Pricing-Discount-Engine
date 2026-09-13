@@ -1,5 +1,6 @@
 const express = require('express');
 const { initializeDatabase } = require('./db/database');
+const { priceCart } = require('./services/pricing');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -64,9 +65,11 @@ initializeDatabase((databaseError, db) => {
             quantity: row.quantity
           }));
 
+        const pricedCart = priceCart({ items });
+
         res.json({
           id: rows[0].cart_id,
-          items
+          ...pricedCart
         });
       }
     );
