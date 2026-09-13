@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "db:verify": "node db/verify.js"
+    "db:verify": "node db/verify.js",
+    "test": "node --test"
   },
   "dependencies": {
     "express": "^4.21.2",

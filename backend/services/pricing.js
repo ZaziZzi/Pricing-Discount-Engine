@@ -2,7 +2,29 @@ const { calculateBuyXGetYDiscount } = require('./discounts/buyXGetY');
 const { calculateCouponDiscount } = require('./discounts/couponDiscount');
 const { calculatePercentageDiscount } = require('./discounts/percentageDiscount');
 
+function validateCart(cart) {
+  if (!cart || !Array.isArray(cart.items)) {
+    throw new TypeError('Cart must contain an items array.');
+  }
+
+  cart.items.forEach((item) => {
+    if (!item || !Number.isInteger(item.productId) || !item.name) {
+      throw new TypeError('Each cart item must have a product ID and name.');
+    }
+
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+      throw new RangeError('Item quantity must be a positive integer.');
+    }
+
+    if (!Number.isInteger(item.unitPricePence) || item.unitPricePence < 0) {
+      throw new RangeError('Item price must be a non-negative integer in pence.');
+    }
+  });
+}
+
 function priceCart(cart, options = {}) {
+  validateCart(cart);
+
   const items = cart.items.map((item) => ({
     ...item,
     lineTotalPence: item.unitPricePence * item.quantity
