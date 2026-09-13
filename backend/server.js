@@ -4,6 +4,17 @@ const { priceCart } = require('./services/pricing');
 
 const app = express();
 const port = process.env.PORT || 3001;
+const discountOptions = {
+  buyXGetYRule: {
+    productId: 1,
+    buyQuantity: 3,
+    freeQuantity: 1
+  },
+  percentageRule: {
+    thresholdPence: 5000,
+    percentage: 10
+  }
+};
 
 app.use(express.json());
 
@@ -65,7 +76,13 @@ initializeDatabase((databaseError, db) => {
             quantity: row.quantity
           }));
 
-        const pricedCart = priceCart({ items });
+        const pricedCart = priceCart(
+          { items },
+          {
+            ...discountOptions,
+            couponCode: req.query.couponCode
+          }
+        );
 
         res.json({
           id: rows[0].cart_id,
