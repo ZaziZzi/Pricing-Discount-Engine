@@ -11,8 +11,11 @@ function formatPence(pence) {
 
 function App() {
   const [couponCode, setCouponCode] = useState('');
+  const [products, setProducts] = useState([]);
+  const [selectedProductId, setSelectedProductId] = useState('');
   const [pricing, setPricing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [mutationLoading, setMutationLoading] = useState(false);
   const [error, setError] = useState('');
 
   async function loadPricing(code = '') {
@@ -38,13 +41,73 @@ function App() {
     }
   }
 
+  async function loadProducts() {
+    try {
+      const response = await fetch('/api/products');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Unable to load products.');
+      }
+
+      setProducts(data);
+      setSelectedProductId(data[0] ? String(data[0].id) : '');
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to load products.');
+    }
+  }
+
+  async function mutateCart(url, method, body) {
+    setMutationLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Unable to update the cart.');
+      }
+
+      await loadPricing(couponCode);
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to update the cart.');
+    } finally {
+      setMutationLoading(false);
+    }
+  }
+
   useEffect(() => {
     loadPricing();
+    loadProducts();
   }, []);
 
   function handleSubmit(event) {
     event.preventDefault();
     loadPricing(couponCode);
+  }
+
+  function handleAddProduct(event) {
+    event.preventDefault();
+
+    if (selectedProductId) {
+      mutateCart(`/api/carts/${cartId}/items`, 'POST', {
+        productId: Number(selectedProductId),
+        quantity: 1
+      });
+    }
+  }
+
+  function updateQuantity(productId, quantity) {
+    mutateCart(`/api/carts/${cartId}/items/${productId}`, 'PATCH', { quantity });
+  }
+
+  function removeItem(productId) {
+    mutateCart(`/api/carts/${cartId}/items/${productId}`, 'DELETE');
   }
 
   return (
@@ -64,8 +127,29 @@ function App() {
             onChange={(event) => setCouponCode(event.target.value)}
             placeholder="Optional, e.g. SAVE5"
           />
-          <button type="submit" disabled={loading}>
-            {loading ? 'Loading...' : 'Apply coupon'}
+          <button type="submit" disabled={loading || mutationLoading}>
+            {loading || mutationLoading ? 'Loading...' : 'Apply coupon'}
+          </button>
+        </div>
+      </form>
+
+      <form className="add-product-form" onSubmit={handleAddProduct}>
+        <label htmlFor="product-select">Add product</label>
+        <div className="coupon-controls">
+          <select
+            id="product-select"
+            value={selectedProductId}
+            onChange={(event) => setSelectedProductId(event.target.value)}
+            disabled={products.length === 0 || mutationLoading}
+          >
+            {products.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.name}
+              </option>
+            ))}
+          </select>
+          <button type="submit" disabled={!selectedProductId || mutationLoading}>
+            Add
           </button>
         </div>
       </form>
@@ -92,11 +176,40 @@ function App() {
               <div className="item-list">
                 {pricing.items.map((item) => (
                   <article className="cart-item" key={item.productId}>
-                    <div>
+                    <div className="cart-item-details">
                       <h3>{item.name}</h3>
                       <p>{item.quantity} × {formatPence(item.unitPricePence)}</p>
                     </div>
-                    <strong>{formatPence(item.lineTotalPence)}</strong>
+                    <div className="cart-item-actions">
+                      <div className="quantity-controls" aria-label={`Quantity for ${item.name}`}>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                          disabled={item.quantity === 1 || mutationLoading}
+                          aria-label={`Decrease ${item.name} quantity`}
+                        >
+                          -
+                        </button>
+                        <span>{item.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          disabled={mutationLoading}
+                          aria-label={`Increase ${item.name} quantity`}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <strong>{formatPence(item.lineTotalPence)}</strong>
+                      <button
+                        type="button"
+                        className="remove-button"
+                        onClick={() => removeItem(item.productId)}
+                        disabled={mutationLoading}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </article>
                 ))}
               </div>
