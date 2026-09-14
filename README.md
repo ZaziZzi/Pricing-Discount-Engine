@@ -1,5 +1,3 @@
-# PLANNING AND IDEAS FROM ME, AI WAS USED IN THIS FILE TO POLISH.
-
 # Hut 3 Pricing & Discount Engine
 
 A small full-stack pricing demonstration for the Hut 3 Graduate Software Engineer take-home exercise. It stores a persistent shopping cart, applies the agreed discount rules on the backend, and displays the itemised result in a minimal React UI.
