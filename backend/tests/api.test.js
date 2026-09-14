@@ -11,6 +11,7 @@ const temporaryCartId = 9001;
 let serverProcess;
 let baseUrl;
 
+// Mutations use an isolated cart so tests never alter the seeded demo cart.
 function getAvailablePort() {
   return new Promise((resolve, reject) => {
     const temporaryServer = createServer();

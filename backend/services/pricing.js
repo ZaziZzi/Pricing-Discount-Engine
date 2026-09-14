@@ -25,6 +25,7 @@ function validateCart(cart) {
 function priceCart(cart, options = {}) {
   validateCart(cart);
 
+  // Keep calculations in integer pence so currency arithmetic stays exact.
   const items = cart.items.map((item) => ({
     ...item,
     lineTotalPence: item.unitPricePence * item.quantity
@@ -38,6 +39,7 @@ function priceCart(cart, options = {}) {
   let discountedSubtotalPence = subtotalPence;
   const discounts = [];
 
+  // Discounts are deliberately ordered: item-level BOGO, percentage, then coupon.
   if (options.buyXGetYRule) {
     const buyXGetYDiscountPence = items.reduce(
       (discount, item) => discount + calculateBuyXGetYDiscount(item, options.buyXGetYRule),

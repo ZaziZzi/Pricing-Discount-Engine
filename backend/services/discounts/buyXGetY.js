@@ -3,6 +3,7 @@ function calculateBuyXGetYDiscount(item, rule) {
     return 0;
   }
 
+  // Complete groups of buy + free quantities determine how many units are free.
   const groupSize = rule.buyQuantity + rule.freeQuantity;
   const freeQuantity = Math.floor(item.quantity / groupSize) * rule.freeQuantity;
 
