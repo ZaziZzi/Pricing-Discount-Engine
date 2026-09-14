@@ -15,5 +15,6 @@ CREATE TABLE IF NOT EXISTS cart_items (
   quantity INTEGER NOT NULL CHECK (quantity > 0),
   FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id),
+  -- One row per product in a cart lets add operations upsert quantities safely.
   UNIQUE (cart_id, product_id)
 );

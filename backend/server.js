@@ -21,6 +21,7 @@ function isPositiveInteger(value) {
 }
 
 function getCartRows(db, cartId, callback) {
+  // LEFT JOIN keeps an existing cart visible even when it has no items.
   db.all(
     `SELECT carts.id AS cart_id,
             products.id AS product_id,
@@ -58,6 +59,7 @@ function getPricedCart(db, cartId, couponCode, callback) {
         quantity: row.quantity
       }));
 
+    // Pricing stays on the backend so the frontend remains a display layer.
     callback(null, {
       id: rows[0].cart_id,
       ...priceCart(
@@ -72,6 +74,7 @@ function getPricedCart(db, cartId, couponCode, callback) {
 }
 
 function sendPricedCart(db, cartId, couponCode, res) {
+  // All reads and mutations finish through this path, so every response is priced consistently.
   getPricedCart(db, cartId, couponCode, (queryError, cart) => {
     if (queryError) {
       res.status(500).json({ error: 'Failed to retrieve cart.' });
@@ -148,6 +151,7 @@ initializeDatabase((databaseError, db) => {
     }
 
     db.serialize(() => {
+      // Cart existence, product existence, and the upsert must succeed together.
       db.run('BEGIN IMMEDIATE TRANSACTION', (beginError) => {
         if (beginError) {
           res.status(500).json({ error: 'Failed to start cart update.' });
@@ -217,6 +221,7 @@ initializeDatabase((databaseError, db) => {
       return;
     }
 
+    // Check the cart first so a missing cart is distinct from a missing cart item.
     db.get('SELECT id FROM carts WHERE id = ?', [cartId], (cartError, cart) => {
       if (cartError) {
         res.status(500).json({ error: 'Failed to check cart.' });
@@ -257,6 +262,7 @@ initializeDatabase((databaseError, db) => {
       return;
     }
 
+    // The cart check prevents an unknown cart being mistaken for an unknown item.
     db.get('SELECT id FROM carts WHERE id = ?', [cartId], (cartError, cart) => {
       if (cartError) {
         res.status(500).json({ error: 'Failed to check cart.' });
